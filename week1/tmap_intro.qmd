@@ -1,7 +1,7 @@
 ---
 title: "Week 1: Lab"
 subtitle: "Making maps with `tmap`"
-author: "Your Name"
+author: "Jaslyn Miura"
 date: 2025-10-2
 execute: 
   eval: true
@@ -42,9 +42,9 @@ There are MANY different ways to make maps in R, all with different pros/cons. C
 
 
 ```{r}
-install.packages("sf")
-install.packages("stars")
-install.packages("tmap")
+# install.packages("sf")
+# install.packages("stars")
+# install.packages("tmap")
 ```
 
 ```{r}
@@ -88,6 +88,9 @@ In `tmap`, the spatial object to plot needs to be defined within the function `t
 Let's start by plotting the countries of the world.
 ```{r}
 
+# plotting a single spatial object
+tm_shape(world_vector) + # defines the spatial object to plot 
+  tm_polygons()          # defines how to plot the object
 
 ```
 
@@ -104,6 +107,11 @@ In the next section we'll unpack the difference between `tm_polygons()` and `tm_
 
 ```{r}
 
+tm_shape(world_vector) + # defines the spatial object to plot 
+  tm_polygons() + # defines how to plot the object
+tm_shape(world_cities) + # defines the second object to plot
+  tm_dots() # defines how to plot the second object
+
 ```
 
 So far, we've only tried plotting *vector* data (more on what this means next week!), but one of the major advantages of `tmap` is that it allows us to plot *vector* and *raster* on the same map.
@@ -111,6 +119,14 @@ So far, we've only tried plotting *vector* data (more on what this means next we
 Let's try on example of this by adding information on global elevations to our previous map.
 
 ```{r}
+# plotting vector and raster spatial objects
+tm_shape(world_elevation) + # plotting global elevations
+  tm_raster() + # use tm_raster() for raster data
+  tm_shape(world_vector) +
+  tm_borders() +
+  tm_shape(world_cities) + 
+  tm_dots() + 
+  tm_text("name", size = 0.7, col = "purple") # including text on top of the dots, using the column "name"
 
 ```
 
@@ -120,6 +136,13 @@ For example, if we swapped the order of `tm_shape()` calls in the previous examp
 
 ```{r}
 
+tm_shape(world_cities) +
+  tm_dots() +
+  tm_text("name") +
+tm_shape(world_elevation) +
+  tm_raster() +
+tm_shape(world_vector) + 
+  tm_borders()
 
 ```
 
@@ -127,6 +150,13 @@ Sometimes this can present sticky issues! Imagine the case where we want to use 
 
 ```{r}
 
+tm_shape(world_elevation) +
+  tm_raster() +
+tm_shape(world_vector) +
+  tm_borders() +
+tm_shape(world_cities, is.main = TRUE) + # plotting world_cities last, but set as main shape
+  tm_dots() +
+  tm_text("name")
 
 ```
 
@@ -145,13 +175,22 @@ For example, let's restrict our previous map to just Europe using a set of min/m
 
 ```{r}
 
+tm_shape(world_elevation, bbox = c(-15, 35, 45, 65)) + # add bounding box to restrict extent of map
+  tm_raster() + 
+tm_shape(world_vector) +
+  tm_borders()
+
 ```
 
 We can also restrict the extent of the map using the extent of a dataset. For example, we can restrict the map using the extent of the `world_cities` data.
 
 ```{r}
 
-
+tm_shape(world_elevation, bbox = world_cities) + # bounding box = extent of world cities
+  tm_raster() +
+tm_shape(world_vector) + 
+  tm_borders()
+  
 ```
 
 ::: {.callout-tip collapse=true}
@@ -161,7 +200,11 @@ You can also restrict the map extent using an OpenStreetMap tool called Nominati
 
 ```{r}
 
-
+tm_shape(world_elevation, bbox = "Europe") +
+  tm_raster() +
+tm_shape(world_vector) +
+  tm_borders()
+  
 
 ```
 
@@ -225,6 +268,11 @@ We modify the colors useing the `col` and `border.col` arguments and other argum
 
 ```{r}
 
+tm_shape(world_vector) +
+  tm_polygons(fill = "lightpink",
+              col = "red",
+              lwd = 0.5,
+              lty = "dashed")
 
 ```
 
@@ -234,14 +282,25 @@ The `tm_borders()` function plots just the borders and the `tm_fill()` function 
 
 ```{r}
 
+# plotting just the borders
+tm_shape(world_vector) +
+  tm_borders(col = "red")
+
 ```
 
 ```{r}
 
+# fill the polygon with fixed color
+tm_shape(world_vector) +
+  tm_fill(fill = "lightpink")
 
 ```
 
 ```{r}
+
+# fill polygon with a color palette representing a variable
+tm_shape(world_vector) +
+  tm_fill("CO2_emissions")
 
 ```
 
@@ -260,6 +319,9 @@ Symbols are a very flexible layer type. They typically represent point data, but
 
 ```{r}
 
+tm_shape(world_cities) +
+  tm_symbols()
+
 ```
 
 `tm_symbols()` has a large number of arguments to flexibly adjust how elements are displayed. While this allows adjusting its results to almost any need, it also makes this function complicated. Therefore, four additional layers are implemented in `tmap`: `tm_squares()`, `tm_bubbles()`, `tm_dots()`, `tm_markers()`. All of them use `tm_symbols()`, but with different default values.
@@ -270,6 +332,12 @@ Symbols are a very flexible layer type. They typically represent point data, but
 - `tm_markers()`: uses marker icons
 
 ```{r}
+
+tm_shape(world_cities) +
+  # tm_squares()
+  # tm_symbols(shape = 22)
+  # tm_dots()
+  # tm_bubbles()
 
 ```
 
@@ -315,6 +383,12 @@ Just like updating axis labels, we always need to update legend titles. In `tmap
 
 ```{r}
 
+tm_shape(world_vector) +
+  tm_polygons(fill = "life_expectancy",
+              fill.scale = tm_scale(values = c("gold", "violet")),
+              fill.legend = tm_legend(title = "Life Expectancy (years)", 
+                                      position = tm_pos_out("left"))) # tm_pos_out() says that we want the legend on the outside
+  
 
 ```
 
@@ -324,16 +398,25 @@ Another approach is to provide the output of a palette function. When using a pa
 ```{r}
 # palette function
 
-#install.packages("viridisLite")
+# install.packages("viridisLite")
 library(viridisLite)
 
-
+tm_shape(world_vector) + 
+  tm_polygons(fill = "life_expectancy",
+              fill.scale = tm_scale(values = viridis(8)),
+              fill.legend = tm_legend(title = "Life Expectancy (years)"))
 
 ```
 
 Finally, the last approach is to use the name of one of the built-in color palettes.
 
 ```{r}
+
+tm_shape(world_vector) +
+  tm_polygons(fill = "life_expectancy",
+              fill.scale = tm_scale(values = "brewer.YlOrBr"),
+              #  fill.scale = tm_scale(values = "brewer.yl_gn")
+              fill.legend = tm_legend(title = "Life Expectancy (years)"))
 
 ```
 
@@ -343,6 +426,13 @@ Sizes can be used for points, lines (line widths), or text to represent quantita
 
 ```{r}
 
+tm_shape(world_vector) + 
+  tm_polygons(fill = "lightpink") +
+tm_shape(world_cities) +
+  tm_symbols(
+    size = "pop2020",
+    size.legend = tm_legend(orientation = "landscape")
+  )
 
 ```
 
@@ -359,7 +449,7 @@ attr_layers_df = tibble::tribble(
   ~Function, ~Description,
   "tm_grid()", "draws coordinate grid lines of the coordinate system of the main shape object",
   "tm_graticules()", "draws latitude and longitude graticules", 
-  "tm_scale_bar()", "adds a scale bar", 
+  "tm_scalebar()", "adds a scale bar", 
   "tm_compass()", "adds a compass rose", 
   "tm_credits()", "adds a text annotation", 
   "tm_logo()", "adds a logo",
@@ -385,11 +475,19 @@ The `tmap` package offers two ways to draw coordinate lines - `tm_grid()` and `t
 
 ```{r}
 
+tm_shape(world_vector) +
+  tm_fill(col = "lightpink") +
+  tm_grid()
+
 ```
 
 `tm_graticules()` shows latitude and longitude lines, with degrees as units
 
 ```{r}
+
+tm_shape(world_vector) +
+  tm_graticules() +
+  tm_fill()
 
 ```
 
@@ -405,6 +503,10 @@ A scale bar is a graphic indicator of the relation between a distance on a map a
 
 ```{r}
 
+tm_shape(world_vector) +
+  tm_fill() +
+  tm_scalebar() + 
+  tm_compass(position = c("left", "top"))
 
 ```
 
@@ -413,6 +515,15 @@ A scale bar is a graphic indicator of the relation between a distance on a map a
 Similar to the `theme()` function in `ggplot2`, the `tm_layout()` function in `tmap` controls many of the map elements of the map layout.
 
 ```{r}
+
+tm_shape(world_vector) +
+  tm_polygons(fill = "wb_income_region",
+              fill.legend = tm_legend("Regional Income")) +
+  tm_title(text = "Global income",
+           frame = TRUE) +
+  tm_layout(text.fontfamily = "serif",
+            style = "beaver",
+            bg.color = "grey95")
 
 ```
 
