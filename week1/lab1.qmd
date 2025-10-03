@@ -1,0 +1,59 @@
+---
+title: "Week 1: Discussion Section"
+author: "Jaslyn Miura"
+format: html
+---
+
+```{r}
+library(here)
+library(tidyverse)
+library(sf)
+library(stars)
+library(tmap)
+library(ggplot2)
+```
+
+```{r}
+ei_points <- st_read(here("week1", "data", "easter_island", "ei_points.gpkg")) %>% 
+  head(36)
+ei_elev <- read_stars(here("week1", "data", "easter_island", "ei_elev.tif"))
+ei_borders <- st_read(here("week1", "data", "easter_island", "ei_border.gpkg"))
+ei_roads <- st_read(here("week1", "data", "easter_island", "ei_roads.gpkg"))
+```
+```{r}
+
+tm_shape(ei_borders) +
+  tm_borders() +
+  tm_layout(title = "Easter Island")
+
+```
+```{r}
+
+tm_shape(ei_borders) +
+  tm_borders(lwd = 4, col = "darkgrey") +
+tm_shape(ei_elev) + 
+  tm_raster(col.scale = tm_scale(values = "YlGn"),
+            col.legend = tm_legend("Elevation (m asl)")) +
+tm_shape(ei_roads) +
+  tm_lines() +
+tm_shape(ei_points) +
+  tm_symbols(shape = 17, size = 0.7, fill = "darkred") +
+  tm_layout(title = "Easter Island",
+            bg.color = "steelblue")
+
+```
+```{r}
+# tmap_mode("view")
+
+tmap_mode("plot")
+```
+
+# Create a multiple-object map with ggplot2
+```{r}
+
+ggplot() +
+  geom_sf(data = ei_borders) + 
+  geom_stars(data = ei_elev)
+
+```
+
