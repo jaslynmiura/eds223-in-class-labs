@@ -1,0 +1,98 @@
+---
+title: "Week 2: Discussion Section"
+author: "Jaslyn Miura"
+format: html
+---
+
+# Loading in the data frame
+```{r}
+
+library(tidyverse)
+library(sf)
+library(tmap)
+library(dplyr)
+
+colombia <- st_read(here::here("week2", "data", "Colombia", "Colombia.shp"))
+
+roads <- st_read(here::here("week2", "data",  "RDLINE_colombia", "RDLINE_colombia.shp"))
+
+aves <- read_csv(here::here("week2", "data", "dataves.csv")) %>% 
+  rename(lon = decimal_longitude,
+         lat = decimal_latitude) %>% 
+  st_as_sf(coords = c("lon", "lat"), crs = 4326)
+
+```
+
+# View class and geometry type
+```{r}
+
+class(colombia)
+class(roads)
+class(aves)
+
+unique(st_geometry_type(colombia))
+unique(st_geometry_type(roads))
+unique(st_geometry_type(aves))
+
+```
+
+# Select a macro ecoregion of interest
+```{r}
+
+amazonian <- colombia %>% 
+  # sets categorical "levels" in attribute N1_MacroBi (subregions of Colombia)
+  mutate(N1_MacroBi = as.factor(N1_MacroBi)) %>% 
+  filter(N1_MacroBi == "Amazonian")
+
+tm_shape(amazonian) +
+  tm_polygons()
+
+```
+# Play with coordinate reference system (CRS)
+```{r}
+
+st_crs(colombia)
+st_crs(roads)
+st_crs(aves)
+
+```
+```{r}
+
+# use st_coordinates() to extract/assign
+
+aves_df_st_coords <- aves %>% 
+  mutate(lon = st_coordinates(.)[,1], # assign first matrix item to "lon"
+         lat = st_coordinates(.)[,2]) %>% # assign second matrix item to "lat"
+  st_drop_geometry() # remove geometry column now that it's redundant
+
+```
+
+```{r}
+# convert long and lat into geometry again with st_as_sf()
+
+aves_df_purrr <- aves %>% 
+  st_as_sf(coords = c("lon", "lat"), crs = 4326)
+
+```
+
+# Make a Map
+```{r}
+
+# this is a boolen check if crs match between colombia and roads data set
+st_crs(colombia) == st_crs(roads)
+
+
+aves <- st_transform(aves, crs = st_crs(colombia))
+
+st_crs(aves) == st_crs(colombia)
+
+tm_shape(colombia) +
+  tm_polygons() +
+tm_shape(roads) +
+  tm_lines() +
+tm_shape(aves) +
+  tm_dots() +
+tm_title("Colombia ecoregions, roads\nand bird observations")
+
+```
+
