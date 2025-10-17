@@ -2,6 +2,8 @@
 title: "Week 3: Practice vector operations"
 author: "Jaslyn Miura"
 format: html
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r}
@@ -28,9 +30,47 @@ aves <- st_read(here("week3", "data", "aves_observations_2020_2024.shp")) |>
 ```{r}
 # number of bird observations within protected areas in Santa Barbara County
 
+# subsetting data 
+aves_protected_areas_subset <- sb_protected_areas[aves, ]
 
+tm_shape(sb_county_boundary) +
+  tm_fill() +
+  tm_shape(sb_protected_areas) + 
+    tm_borders(lwd = 1, col = "black") +
+    tm_fill(fill = "maroon") +
+  tm_shape(aves_protected_areas_subset) +
+    tm_dots(fill = "gold")
 
+```
 
+```{r}
+
+# using st_join()
+aves_protected_areas_join <- st_join(aves, sb_protected_areas)
+
+tm_shape(sb_county_boundary) +
+  tm_fill() +
+  tm_shape(sb_protected_areas) + 
+    tm_borders(lwd = 1, col = "black") +
+    tm_fill(fill = "maroon") +
+  tm_shape(aves_protected_areas_join) +
+    tm_dots(fill = "gold")
+
+```
+
+```{r}
+sb_PA_buffer_5km <- st_buffer(sb_protected_areas, dist = units::set_units(5, "km"))
+
+# taking a subset of aves, where there is aves data in the sb_PA_buffer_subset
+aves_buffer_subset <- sb_PA_buffer_5km[aves, ]
+
+tm_shape(sb_county_boundary) +
+  tm_fill() +
+  tm_shape(sb_protected_areas) + 
+    tm_borders(lwd = 1, col = "black") +
+    tm_fill(fill = "maroon") +
+  tm_shape(aves_buffer_subset) +
+    tm_dots(fill = "gold")
 
 ```
 
